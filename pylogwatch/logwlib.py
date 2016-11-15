@@ -148,6 +148,12 @@ class PyLogConf (PyLog):
             data = {'event_type':'Message', 'message': line.replace('%','%%'), 'data' :{'logger':fname}}
             for fobj in self.formatters[fname]:
                 fobj.format_line(line, data, paramdict)
+            if self.conf.STOPWORDS:
+                for key in self.conf.STOPWORDS:
+                    if key in data['message']:
+                        skip=True
+                if skip:
+                    continue
             if not data.pop('_do_not_send', False): # Skip lines that have the '_do_not_send' key
                 if paramdict:
                     data['params'] = tuple([paramdict[i] for i in sorted(paramdict.keys())])

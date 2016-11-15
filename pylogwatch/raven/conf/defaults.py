@@ -17,6 +17,9 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), os.pardir))
 # Allow local testing of Sentry even if DEBUG is enabled
 DEBUG = False
 
+# For skipping some lines
+STOPWORDS = []
+
 # This should be the full URL to sentries store view
 SERVERS = None
 
