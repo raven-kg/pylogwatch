@@ -98,7 +98,7 @@ class FPMErrorLogFormatter (BaseFormatter):
         except ValueError:
             return datadict
         # Add date as a param and event date
-        datadict['message'] = self.replace_param(line, datadict ['message'], '%s' % line[0:23], paramdict)
+        datadict['message'] = self.replace_param(line, datadict ['message'], '%s' % line[1:21], paramdict)
         datadict['date'] = dt
 
         # Add loglevel
