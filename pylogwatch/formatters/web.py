@@ -93,7 +93,7 @@ class FPMErrorLogFormatter (BaseFormatter):
 
     def format_line (self, line, datadict, paramdict):
         try:
-            log_date = l[:22]
+            log_date = line[:22]
             dt = parse(log_date.rstrip(']').lstrip('['))
         except ValueError:
             return datadict
@@ -102,12 +102,12 @@ class FPMErrorLogFormatter (BaseFormatter):
         datadict['date'] = dt
 
         # Add loglevel
-        loglvl = re.findall(r'^(\w+):', l[23:])[0]
+        loglvl = re.findall(r'^(\w+):', line[23:])[0]
         if not loglvl.isdigit() and loglvl in self.levels:
             datadict.setdefault('data',{})['level'] = self.levels[loglvl]
 
         # Add pool name
         try:
-            datadict['pool'] = re.findall(r'\[pool (\w+)\]', l)[0]
+            datadict['pool'] = re.findall(r'\[pool (\w+)\]', line)[0]
         except IndexError:
             pass

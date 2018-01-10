@@ -1,9 +1,16 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Main executable
 
-import optparse
-import sys, os
+import os
+import sys
 import imp
+import inspect
+import optparse
+
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir) 
 
 from pylogwatch.logwlib import PyLogConf
 from pylogwatch.utils import lockfile
