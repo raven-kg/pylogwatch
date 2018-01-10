@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pylogwatch.formatters.base import BaseFormatter
 from dateutil.parser import parse
 
@@ -80,3 +81,33 @@ class ApacheErrorLogFormatter (BaseFormatter):
         ref = line.split('referer: ')[-1]
         if ref!= line:
             datadict['culprit'] = ref.strip()
+
+
+class FPMErrorLogFormatter (BaseFormatter):
+    """
+    Relies on the following parts:
+    [DD-MON-YYY HH:MM:SS] severity: [pool name] error message
+    """
+    levels = logging._levelNames
+    activate_on_fname_suffix = ('error.log','error_log')
+
+    def format_line (self, line, datadict, paramdict):
+        try:
+            log_date = l[:22]
+            dt = parse(log_date.rstrip(']').lstrip('['))
+        except ValueError:
+            return datadict
+        # Add date as a param and event date
+        datadict['message'] = self.replace_param(line, datadict ['message'], '%s' % line[0:23], paramdict)
+        datadict['date'] = dt
+
+        # Add loglevel
+        loglvl = re.findall(r'^(\w+):', l[23:])[0]
+        if not loglvl.isdigit() and loglvl in self.levels:
+            datadict.setdefault('data',{})['level'] = self.levels[loglvl]
+
+        # Add pool name
+        try:
+            datadict['pool'] = re.findall(r'\[pool (\w+)\]', l)[0]
+        except IndexError:
+            pass
