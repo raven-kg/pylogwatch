@@ -148,6 +148,7 @@ class PyLogConf (PyLog):
             data = {'event_type':'Message', 'message': line.replace('%','%%'), 'data' :{'logger':fname}}
             for fobj in self.formatters[fname]:
                 fobj.format_line(line, data, paramdict)
+            skip = False
             if self.conf.STOPWORDS:
                 for key in self.conf.STOPWORDS:
                     if key in data['message']:
