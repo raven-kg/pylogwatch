@@ -93,8 +93,7 @@ class FPMErrorLogFormatter (BaseFormatter):
 
     def format_line (self, line, datadict, paramdict):
         try:
-            log_date = line[:22]
-            dt = parse(log_date.rstrip(']').lstrip('['))
+            dt = parse(line[1:21])
         except ValueError:
             return datadict
         # Add date as a param and event date
