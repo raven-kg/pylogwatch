@@ -9,7 +9,7 @@ IP_RE = re.compile(r'.* \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
 class NginxErrorLogFormatter (BaseFormatter):
     """
     Relies on the following parserts:
-    <year/month/day hour:minute:sec> [<severity>] <cryptic_numbers> <error_description> client: <client>, 
+    <year/month/day hour:minute:sec> [<severity>] <cryptic_numbers> <error_description> client: <client>,
         server: <client>, request: <request>, host: <host>
     """
     levels = logging._levelNames
@@ -73,7 +73,10 @@ class ApacheErrorLogFormatter (BaseFormatter):
             datadict ['message'] = self.replace_param(line, datadict ['message'], line_parts[2].split()[-1], paramdict)
 
         # Add loglevel
-        loglvl = line_parts[1].upper()
+        try:
+            loglvl = line_parts[1].upper()
+        except IndexError:
+            loglvl = 'NOTICE'
         if not loglvl.isdigit() and loglvl in self.levels:
             datadict.setdefault('data',{})['level'] = self.levels[loglvl]
 
