@@ -6,7 +6,11 @@ import sys
 if sys.version_info < (2, 5):
     raise "Required python 2.5 or greater"
 
-import os, sqlite3, itertools, time
+import os
+import re
+import time
+import sqlite3
+import itertools
 from datetime import datetime
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -154,6 +158,10 @@ class PyLogConf (PyLog):
                     if key in data['message']:
                         skip=True
                 if skip:
+                    continue
+            if not self.conf.FILTER_REGEX is None:
+                f_regex = re.compile(r'{0}'.format(self.conf.FILTER_REGEX))
+                if re.match(f_regex, data['message']):
                     continue
             if not data.pop('_do_not_send', False): # Skip lines that have the '_do_not_send' key
                 if paramdict:
