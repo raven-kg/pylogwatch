@@ -72,6 +72,11 @@ class ApacheErrorLogFormatter (BaseFormatter):
         if len(line_parts)>3 and IP_RE.match (line_parts[2]):
             datadict ['message'] = self.replace_param(line, datadict ['message'], line_parts[2].split()[-1], paramdict)
 
+        # Find IP for MPM-ITK 503 error
+        if re.match(r'.*MaxClientsVhost reached.*', line):
+            client_ip = re.findall(r'reached for (.+:\d+), refusing client (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).', line)[0]
+            datadict.update({'tags': {'client_ip': client_ip[1], 'host': client_ip[0]}})
+
         # Add loglevel
         try:
             loglvl = line_parts[1].upper()
@@ -100,7 +105,7 @@ class FPMErrorLogFormatter (BaseFormatter):
         except ValueError:
             return datadict
         # Add date as a param and event date
-        datadict['message'] = self.replace_param(line, datadict ['message'], '%s' % line[1:21], paramdict)
+        datadict['message'] = self.replace_param(line, datadict['message'], '%s' % line[1:21], paramdict)
         datadict['date'] = dt
 
         # Add loglevel
