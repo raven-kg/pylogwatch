@@ -4,7 +4,30 @@ from dateutil.parser import parse
 
 import logging
 import re
-IP_RE = re.compile(r'.* \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
+
+# IP addres regex
+# taken from this gist https://gist.github.com/dfee/6ed3a4b05cfe7a6faf40a2102408d5d8
+IPV4SEG  = r'(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])'
+IPV4ADDR = r'(?:(?:' + IPV4SEG + r'\.){3,3}' + IPV4SEG + r')'
+IPV6SEG  = r'(?:(?:[0-9a-fA-F]){1,4})'
+IPV6GROUPS = (
+    r'(?:' + IPV6SEG + r':){7,7}' + IPV6SEG,                  # 1:2:3:4:5:6:7:8
+    r'(?:' + IPV6SEG + r':){1,7}:',                           # 1::                                 1:2:3:4:5:6:7::
+    r'(?:' + IPV6SEG + r':){1,6}:' + IPV6SEG,                 # 1::8               1:2:3:4:5:6::8   1:2:3:4:5:6::8
+    r'(?:' + IPV6SEG + r':){1,5}(?::' + IPV6SEG + r'){1,2}',  # 1::7:8             1:2:3:4:5::7:8   1:2:3:4:5::8
+    r'(?:' + IPV6SEG + r':){1,4}(?::' + IPV6SEG + r'){1,3}',  # 1::6:7:8           1:2:3:4::6:7:8   1:2:3:4::8
+    r'(?:' + IPV6SEG + r':){1,3}(?::' + IPV6SEG + r'){1,4}',  # 1::5:6:7:8         1:2:3::5:6:7:8   1:2:3::8
+    r'(?:' + IPV6SEG + r':){1,2}(?::' + IPV6SEG + r'){1,5}',  # 1::4:5:6:7:8       1:2::4:5:6:7:8   1:2::8
+    IPV6SEG + r':(?:(?::' + IPV6SEG + r'){1,6})',             # 1::3:4:5:6:7:8     1::3:4:5:6:7:8   1::8
+    r':(?:(?::' + IPV6SEG + r'){1,7}|:)',                     # ::2:3:4:5:6:7:8    ::2:3:4:5:6:7:8  ::8       ::
+    r'fe80:(?::' + IPV6SEG + r'){0,4}%[0-9a-zA-Z]{1,}',       # fe80::7:8%eth0     fe80::7:8%1  (link-local IPv6 addresses with zone index)
+    r'::(?:ffff(?::0{1,4}){0,1}:){0,1}[^\s:]' + IPV4ADDR,     # ::255.255.255.255  ::ffff:255.255.255.255  ::ffff:0:255.255.255.255 (IPv4-mapped IPv6 addresses and IPv4-translated addresses)
+    r'(?:' + IPV6SEG + r':){1,4}:[^\s:]' + IPV4ADDR,          # 2001:db8:3:4::192.0.2.33  64:ff9b::192.0.2.33 (IPv4-Embedded IPv6 Address)
+)
+IPV6ADDR = '|'.join(['(?:{})'.format(g) for g in IPV6GROUPS[::-1]])  # Reverse rows for greedy match
+
+IP_RE = re.compile(r'.* (' + IPV4ADDR + '|' + IPV6ADDR + ')')
+
 
 class NginxErrorLogFormatter (BaseFormatter):
     """
@@ -71,15 +94,30 @@ class ApacheErrorLogFormatter (BaseFormatter):
         # Add remote IP as a param
         if len(line_parts)>3 and IP_RE.match (line_parts[2]):
             datadict ['message'] = self.replace_param(line, datadict ['message'], line_parts[2].split()[-1], paramdict)
+        tags = {}
 
-        # Find IP for MPM-ITK 503 error
-        if re.match(r'.*MaxClientsVhost reached.*', line):
-            client_ip = re.findall(r'reached for (.+:\d+), refusing client (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).', line)[0]
-            datadict.update({'tags': {'client_ip': client_ip[1], 'host': client_ip[0]}})
+        # Tag virtualhost for MPM-ITK 503 error
+        vhost = re.findall(r'MaxClientsVhost reached for (.+:\d+), refusing client', line)
+        if vhost:
+            tags.update({'host': re.sub(r':(\d+)?', '', vhost[0])})
+        # Tag client IP
+        client_ip = re.findall(IP_RE, line)
+        if client_ip:
+            tags.update({'client_ip': client_ip[0]})
+        # Tag apache error code
+        apache_error = re.findall(r'(AH0\d{3,4})', line)
+        if apache_error:
+            tags.update({'apache_code': apache_error[0]})
+
+        if tags:
+            datadict.update({'tags': tags})
 
         # Add loglevel
         try:
             loglvl = line_parts[1].upper()
+            # Apache 2.4 log levels contains module name.
+            if re.match(r'.+:.+', loglvl):
+                loglvl = loglvl.split(':')[1]
         except IndexError:
             loglvl = 'NOTICE'
         if not loglvl.isdigit() and loglvl in self.levels:
@@ -105,7 +143,7 @@ class FPMErrorLogFormatter (BaseFormatter):
         except ValueError:
             return datadict
         # Add date as a param and event date
-        datadict['message'] = self.replace_param(line, datadict['message'], '%s' % line[1:21], paramdict)
+        datadict['message'] = self.replace_param(line, datadict ['message'], '%s' % line[1:21], paramdict)
         datadict['date'] = dt
 
         # Add loglevel
