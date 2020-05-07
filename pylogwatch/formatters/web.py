@@ -97,7 +97,7 @@ class ApacheErrorLogFormatter (BaseFormatter):
         tags = {}
 
         # Tag virtualhost for MPM-ITK 503 error
-        vhost = re.findall(r'MaxClientsVhost reached for (.+:\d+), refusing client', line)
+        vhost = re.findall(r'MaxClientsVhost reached for (.+:\d{0,8}), refusing client', line)
         if vhost:
             tags.update({'host': re.sub(r':(\d+)?', '', vhost[0])})
         # Tag client IP
