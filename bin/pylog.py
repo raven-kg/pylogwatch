@@ -10,7 +10,7 @@ import optparse
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir) 
+sys.path.insert(0,parentdir)
 
 from pylogwatch.logwlib import PyLogConf
 from pylogwatch.utils import lockfile
@@ -19,7 +19,7 @@ from pylogwatch.utils import lockfile
 def load_cfg_module (cfgpath):
     try:
         return imp.load_source ('PyLogConfig',os.path.realpath(cfgpath))
-    except ImportError, err:
+    except ImportError as err:
         sys.exit ('Cannot load config file %s: %s' % (cfgpath, err))
 
 if __name__=='__main__':

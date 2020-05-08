@@ -35,7 +35,7 @@ class SysLogDateFormatter (BaseFormatter):
     def format_line (self, line, datadict, paramdict):
         parts = line.split()
         raw_datestr = ' '.join (parts[:3]) + ' '
-        datestr = raw_datestr + unicode(self.year)
+        datestr = raw_datestr + str(self.year)
         try:
             dt = parse(datestr)
         except ValueError: # Uh-oh, line with an unexpected format

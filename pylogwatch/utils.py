@@ -4,7 +4,7 @@ Utilities.
 
 import fcntl
 
-def lockfile (lockfile):
+def lockfile(lockfile):
     """
     Create a and lock the file object supplied in lcokfile.
     Lockfile should be a file object opened with 'w'.

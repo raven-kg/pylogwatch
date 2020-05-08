@@ -1,10 +1,7 @@
-# Python 2.5 compatibility
-from __future__ import with_statement
-
 # Python version
 import sys
-if sys.version_info < (2, 5):
-    raise "Required python 2.5 or greater"
+if sys.version_info < (3, 3):
+    raise "Required python 3.3 or greater"
 
 import os
 import re
@@ -12,13 +9,6 @@ import time
 import sqlite3
 import itertools
 from datetime import datetime
-
-PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
-proj_path = lambda x: os.path.abspath(os.path.join(PROJECT_DIR,x))
-# Check if we are bundled together with raven, and add our dir to the pythonpath if we are
-if os.path.exists(proj_path( 'raven')):
-    sys.path.append(PROJECT_DIR)
-
 from raven import Client
 
 
@@ -40,9 +30,9 @@ class PyLog (object):
         """Set up the DB"""
         conn = sqlite3.connect (dbname)
         curs = conn.cursor()
-        sql = 'create table if not exists file_cursor (filename TEXT PRIMARY KEY, inode INTEGER, lastbyte INTEGER, updated INTEGER)'
+        sql = 'CREATE TABLE IF NOT EXISTS file_cursor (filename TEXT PRIMARY KEY, inode INTEGER, lastbyte INTEGER, updated INTEGER)'
         curs.execute (sql)
-        sql = 'create table if not exists events (event TEXT PRIMARY KEY, args TEXT, updated INTEGER)'
+        sql = 'CREATE TABLE IF NOT EXISTS events (event TEXT PRIMARY KEY, args TEXT, updated INTEGER)'
         curs.execute (sql)
         conn.commit()
         return conn
@@ -61,7 +51,7 @@ class PyLog (object):
             yield line
 
     def get_fileinfo (self, fname):
-        self.curs.execute ('SELECT filename, inode, lastbyte from file_cursor where filename=?', [fname,])
+        self.curs.execute ('SELECT filename, inode, lastbyte FROM file_cursor WHERE filename=?', [fname,])
         result = self.curs.fetchone()
         if result and len(result)==3:
             f, inode, lastbyte = result
@@ -70,7 +60,7 @@ class PyLog (object):
             return None,0
 
     def save_fileinfo (self, fname, inode, lastbyte):
-        self.curs.execute ("REPLACE into file_cursor (filename, inode, lastbyte, updated) \
+        self.curs.execute ("REPLACE INTO file_cursor (filename, inode, lastbyte, updated) \
         values (?,?,?,datetime())", [fname,inode, lastbyte ])
         self.conn.commit()
         return
@@ -81,7 +71,7 @@ class PyLog (object):
         Meant for calling after each line is processed
         """
         def save_fileinfo (self, fname, inode, lastbyte):
-            self.curs.execute ("UPDATE into file_cursor set lastbyte=? where filename=?",\
+            self.curs.execute ("UPDATE INTO file_cursor SET lastbyte=? WHERE filename=?",\
                                [fname,inode, lastbyte ])
             self.conn.commit()
             return
@@ -138,7 +128,7 @@ class PyLogConf (PyLog):
         self.conf = conf
         self.client = Client (conf.RAVEN['dsn'])
         self.formatters = {}
-        for k,v in self.conf.FILE_FORMATTERS.iteritems():
+        for k,v in self.conf.FILE_FORMATTERS.items():
             if isinstance(v,str):
                 raise ValueError ('Please use a list or a tuple for the file formatters values')
             self.formatters[k] = [item_import(i)() for i in v]
@@ -167,7 +157,7 @@ class PyLogConf (PyLog):
                 if paramdict:
                     data['params'] = tuple([paramdict[i] for i in sorted(paramdict.keys())])
                 if self.conf.DEBUG:
-                    print data
+                    print(data)
                 self.client.capture(**data)
                 self.update_bytes(fname, fileobject.tell())
 
