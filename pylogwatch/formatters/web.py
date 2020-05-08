@@ -39,6 +39,12 @@ class NginxErrorLogFormatter (BaseFormatter):
     activate_on_fname_suffix = ('error.log','error_log')
 
     def format_line (self, line, datadict, paramdict):
+        tags = {
+            "remote_ip": None,
+            "hostname":  None,
+            "referer":   None,
+            "upstream":  None
+        }
         try:
             dt = parse (line[:19])
         except ValueError:
@@ -48,10 +54,23 @@ class NginxErrorLogFormatter (BaseFormatter):
         datadict['date'] = dt
 
         # Add remote IP as a param
-        client_split = line.split('client: ')
-        if len(client_split) > 1:
-            client = client_split[1].split(',')[0]
-            datadict ['message'] = self.replace_param(line, datadict ['message'], client, paramdict)
+        client = re.findall(r'client: (' + IPV4ADDR + '|' + IPV6ADDR + ')\,', line)
+        if client:
+            datadict ['message'] = self.replace_param(line, datadict ['message'], client[0], paramdict)
+            tags['remote_ip'] = client[0]
+
+        # Add upstream to tags and params
+        upstream = re.findall(r' upstream: "(.+?)"', line)
+        if upstream:
+            datadict ['message'] = self.replace_param(line, datadict ['message'], upstream[0], paramdict)
+            _reg = re.compile('((.*?)//(.*?)\:\d+)/(.+)')
+            tags['upstream'] = re.sub(_reg, '\g<1>', upstream[0])
+
+        # Add server name
+        server = re.findall(r'host: "(.+?)"', line)
+        if server:
+            datadict ['message'] = self.replace_param(line, datadict ['message'], server[0], paramdict)
+            tags['hostname'] = server[0]
 
         severity = [p.strip().lstrip('[') for p in line[20:].split(']')][0]
         # Add loglevel
@@ -71,7 +90,11 @@ class NginxErrorLogFormatter (BaseFormatter):
         # set the Referer field as the culprit
         ref = line.split('referrer: ')[-1]
         if ref != line:
-            datadict['culprit'] = ref.strip().strip('"')
+            referer = ref.strip().strip('"')
+            datadict['culprit'] = referer
+            tags['referer'] = referer
+
+        datadict.update({'tags': tags})
 
 class ApacheErrorLogFormatter (BaseFormatter):
     """
