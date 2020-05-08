@@ -35,7 +35,7 @@ class NginxErrorLogFormatter (BaseFormatter):
     <year/month/day hour:minute:sec> [<severity>] <cryptic_numbers> <error_description> client: <client>,
         server: <client>, request: <request>, host: <host>
     """
-    levels = logging._levelNames
+    levels = logging._nameToLevel
     activate_on_fname_suffix = ('error.log','error_log')
 
     def format_line (self, line, datadict, paramdict):
@@ -101,7 +101,7 @@ class ApacheErrorLogFormatter (BaseFormatter):
     Relies on the following parts:
     [date] [severity] [client XXX] everything else
     """
-    levels = logging._levelNames
+    levels = logging._nameToLevel
     activate_on_fname_suffix = ('error.log','error_log')
 
     def format_line (self, line, datadict, paramdict):
@@ -157,7 +157,7 @@ class FPMErrorLogFormatter (BaseFormatter):
     Relies on the following parts:
     [DD-MON-YYY HH:MM:SS] severity: [pool name] error message
     """
-    levels = logging._levelNames
+    levels = logging._nameToLevel
     activate_on_fname_suffix = ('error.log','error_log')
 
     def format_line (self, line, datadict, paramdict):

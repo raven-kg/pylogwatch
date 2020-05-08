@@ -10,7 +10,7 @@ class GitoliteLogFormatter(BaseFormatter):
     We log only if command == die or warn
     """
 
-    levels = logging._levelNames
+    levels = logging._nameToLevel
 
     def format_line (self, line, datadict, paramdict):
         line_parts = line.split('\t')

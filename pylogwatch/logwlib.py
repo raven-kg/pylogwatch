@@ -11,12 +11,19 @@ import itertools
 from datetime import datetime
 from raven import Client
 
+PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
+proj_path = lambda x: os.path.abspath(os.path.join(PROJECT_DIR,x))
+
+if os.path.exists(proj_path( 'formatters')):
+    sys.path.append(PROJECT_DIR)
+
 
 def item_import(name):
     d = name.rfind(".")
     classname = name[d+1:]
     m = __import__(name[:d], globals(), locals(), [classname])
     return getattr(m, classname)
+
 
 class PyLog (object):
     def __init__ (self, filenames, dbname = 'logw.db', filetable = 'file_cursor', eventtable = 'events'):
